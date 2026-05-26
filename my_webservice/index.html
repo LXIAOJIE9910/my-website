@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>签到系统</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
+body{background:#f5f7fa;padding:30px 20px}
+.box{max-width:450px;margin:0 auto;background:#fff;border-radius:14px;padding:30px;box-shadow:0 2px 12px #00000012}
+h2{text-align:center;margin-bottom:24px;color:#222}
+input{width:100%;padding:14px 16px;border:1px solid #ddd;border-radius:8px;font-size:16px;outline:none}
+button{width:100%;margin-top:16px;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:16px}
+.info{margin-top:20px;padding:20px;border-radius:10px;background:#f0f7ff;display:none}
+.info p{margin:10px 0;font-size:16px}
+.err{color:red;text-align:center;margin-top:15px;display:none}
+.success{color:#009944;text-align:center;font-size:20px;font-weight:bold;margin-bottom:15px}
+.admin{margin-top:30px;text-align:center}
+#record{white-space:pre-line;margin-top:10px;text-align:left;background:#f8f8f8;padding:12px;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>签到登记</h2>
+<input id="name" placeholder="请输入姓名签到">
+<button onclick="checkSign()">确认签到</button>
+<div class="err" id="err"></div>
+<div class="info" id="info">
+<div class="success">签到成功</div>
+<p>姓名：<span id="u_name"></span></p>
+<p>缴费状态：<span id="u_pay"></span></p>
+<p>衬衫尺码：<span id="u_size"></span></p>
+<p>座次：<span id="u_seat"></span></p>
+</div>
+<div class="admin">
+<button onclick="showRecord()" style="background:#666">查看签到记录</button>
+<div id="record"></div>
+</div>
+</div>
+
+<script>
+// 测试人员名单
+let userList = [
+{name:"王明",pay:"已缴费",size:"XL",seat:"1排01号"},
+{name:"李丽",pay:"已缴费",size:"L",seat:"1排02号"},
+{name:"张伟",pay:"未缴费",size:"XXL",seat:"1排03号"},
+{name:"刘芳",pay:"已缴费",size:"M",seat:"2排01号"},
+{name:"陈杰",pay:"未缴费",size:"XL",seat:"2排02号"},
+{name:"赵雪",pay:"已缴费",size:"L",seat:"2排03号"},
+{name:"孙浩",pay:"已缴费",size:"XXL",seat:"3排01号"},
+{name:"周婷",pay:"未缴费",size:"M",seat:"3排02号"},
+{name:"吴斌",pay:"已缴费",size:"L",seat:"3排03号"},
+{name:"郑瑶",pay:"已缴费",size:"S",seat:"4排01号"},
+];
+
+// 签到记录本地存储
+let signList = JSON.parse(localStorage.getItem("signData"))||[];
+
+function checkSign(){
+    let n = document.getElementById("name").value.trim();
+    document.getElementById("err").style.display="none";
+    document.getElementById("info").style.display="none";
+    if(!n){
+        err("请输入姓名");return;
+    }
+    let user = userList.find(item=>item.name===n);
+    if(!user){
+        err("姓名不存在，无法签到");return;
+    }
+    // 判断是否已签到
+    if(signList.includes(n)){
+        err("该人员已签到");return;
+    }
+    // 签到成功
+    signList.push(n);
+    localStorage.setItem("signData",JSON.stringify(signList));
+    document.getElementById("u_name").innerText = user.name;
+    document.getElementById("u_pay").innerText = user.pay;
+    document.getElementById("u_size").innerText = user.size;
+    document.getElementById("u_seat").innerText = user.seat;
+    document.getElementById("info").style.display="block";
+}
+function err(t){
+    let e = document.getElementById("err");
+    e.innerText = t;
+    e.style.display="block";
+}
+function showRecord(){
+    let r = JSON.parse(localStorage.getItem("signData"))||[];
+    document.getElementById("record").innerText = "已签到人员：\n"+(r.length?r.join("\n"):"暂无签到");
+}
+</script>
+</body>
+</html>
