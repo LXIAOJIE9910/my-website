@@ -59,19 +59,35 @@ let signList = JSON.parse(localStorage.getItem("signData"))||[];
 function checkSign(){
     let n = document.getElementById("name").value.trim();
     document.getElementById("err").style.display="none";
-    document.getElementById("info").style.display="none";
+
+    // 空姓名 → 隐藏信息
     if(!n){
-        err("请输入姓名");return;
+        document.getElementById("info").style.display = "none";
+        err("请输入姓名");
+        return;
     }
+
     let user = userList.find(item=>item.name===n);
+
+    // 姓名不存在 → 隐藏信息
     if(!user){
-        err("姓名不存在，无法签到");return;
+        document.getElementById("info").style.display = "none";
+        err("姓名不存在，无法签到");
+        return;
     }
-    // 判断是否已签到
+
+    // 已签到 → 显示信息 + 提示错误
     if(signList.includes(n)){
-        err("该人员已签到");return;
+        document.getElementById("u_name").innerText = user.name;
+        document.getElementById("u_pay").innerText = user.pay;
+        document.getElementById("u_size").innerText = user.size;
+        document.getElementById("u_seat").innerText = user.seat;
+        document.getElementById("info").style.display = "block";
+        err("该人员已签到");
+        return;
     }
-    // 签到成功
+
+    // 签到成功 → 显示信息
     signList.push(n);
     localStorage.setItem("signData",JSON.stringify(signList));
     document.getElementById("u_name").innerText = user.name;
@@ -80,11 +96,13 @@ function checkSign(){
     document.getElementById("u_seat").innerText = user.seat;
     document.getElementById("info").style.display="block";
 }
+
 function err(t){
     let e = document.getElementById("err");
     e.innerText = t;
     e.style.display="block";
 }
+
 function showRecord(){
     let r = JSON.parse(localStorage.getItem("signData"))||[];
     document.getElementById("record").innerText = "已签到人员：\n"+(r.length?r.join("\n"):"暂无签到");
