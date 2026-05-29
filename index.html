@@ -10,7 +10,7 @@ body{background:#f5f7fa;padding:30px 20px}
 .box{max-width:450px;margin:0 auto;background:#fff;border-radius:14px;padding:30px;box-shadow:0 2px 12px #00000012}
 h2{text-align:center;margin-bottom:24px;color:#222}
 input{width:100%;padding:14px 16px;border:1px solid #ddd;border-radius:8px;font-size:16px;outline:none}
-button{width:100%;margin-top:16px;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:16px}
+button{width:100%;margin-top:16px;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:16px;cursor: pointer;}
 .info{margin-top:20px;padding:20px;border-radius:10px;background:#f0f7ff;display:none}
 .info p{margin:10px 0;font-size:16px}
 .err{color:red;text-align:center;margin-top:15px;display:none}
@@ -25,6 +25,14 @@ button{width:100%;margin-top:16px;padding:14px;background:#2563eb;color:#fff;bor
     border-radius:8px;
     display: none;
 }
+/* 家属信息样式 */
+.family-item {
+    padding: 8px 12px;
+    background: #e6f7ff;
+    border-radius: 6px;
+    margin: 6px 0;
+    font-size: 15px;
+}
 </style>
 </head>
 <body>
@@ -36,9 +44,16 @@ button{width:100%;margin-top:16px;padding:14px;background:#2563eb;color:#fff;bor
 <div class="info" id="info">
 <div class="success">签到成功</div>
 <p>姓名：<span id="u_name"></span></p>
-<p>缴费状态：<span id="u_pay"></span></p>
-<p>衬衫尺码：<span id="u_size"></span></p>
-<p>座次：<span id="u_seat"></span></p>
+<p class="show-normal">班级/届别：<span id="u_class"></span></p>
+<p class="show-normal">缴费状态：<span id="u_pay"></span></p>
+<p class="show-normal">本人尺码：<span id="u_size"></span></p>
+<p class="show-normal">家属尺码：<span id="u_familySize"></span></p>
+<p>会议座次：<span id="u_meetingSeat"></span></p>
+<p>晚宴座次：<span id="u_dinnerSeat"></span></p>
+
+<!-- 家属/子女信息区域 -->
+<div id="familyList" style="margin-top:15px;"></div>
+
 </div>
 <div class="admin">
 <button onclick="showRecord()" style="background:#666">查看签到记录</button>
@@ -47,39 +62,181 @@ button{width:100%;margin-top:16px;padding:14px;background:#2563eb;color:#fff;bor
 </div>
 
 <script>
-// 测试人员名单
+// 完整人员名单（94人 + 全部家属/司机/陪同）
 let userList = [
-{name:"王明",pay:"已缴费",size:"XL",seat:"1排01号"},
-{name:"李丽",pay:"已缴费",size:"L",seat:"1排02号"},
-{name:"张伟",pay:"未缴费",size:"XXL",seat:"1排03号"},
-{name:"刘芳",pay:"已缴费",size:"M",seat:"2排01号"},
-{name:"陈杰",pay:"未缴费",size:"XL",seat:"2排02号"},
-{name:"赵雪",pay:"已缴费",size:"L",seat:"2排03号"},
-{name:"孙浩",pay:"已缴费",size:"XXL",seat:"3排01号"},
-{name:"周婷",pay:"未缴费",size:"M",seat:"3排02号"},
-{name:"吴斌",pay:"已缴费",size:"L",seat:"3排03号"},
-{name:"郑瑶",pay:"已缴费",size:"S",seat:"4排01号"},
+// ============== 原始94人 ==============
+{name:"王斌",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"12桌3号",meetingSeat:"12桌3号",type:"normal"},
+{name:"李哲安",classInfo:"",payInfo:"筹备组",selfSize:"无",familySize:"无",dinnerSeat:"7桌2号",meetingSeat:"7桌2号",type:"normal"},
+{name:"刘仲英",classInfo:"08精仪",payInfo:"200",selfSize:"2XL",familySize:"无",dinnerSeat:"7桌3号",meetingSeat:"7桌3号",type:"normal"},
+{name:"贾晓刚",classInfo:"",payInfo:"200",selfSize:"3XL",familySize:"无",dinnerSeat:"9桌2号",meetingSeat:"9桌2号",type:"normal"},
+{name:"孙振",classInfo:"",payInfo:"200",selfSize:"2XL",familySize:"无",dinnerSeat:"8桌5号",meetingSeat:"8桌5号",type:"normal"},
+{name:"许恒波",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"7桌5号",meetingSeat:"7桌5号",type:"normal"},
+{name:"吴孔福",classInfo:"MBA",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"10桌3号",meetingSeat:"10桌3号",type:"normal"},
+{name:"毕叶",classInfo:"MBA",payInfo:"200",selfSize:"2XL",familySize:"无",dinnerSeat:"5桌2号",meetingSeat:"5桌2号",type:"normal"},
+{name:"田敏",classInfo:"2026MBA",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"10桌4号",meetingSeat:"10桌4号",type:"normal"},
+{name:"赵忠德",classInfo:"",payInfo:"已赞助",selfSize:"2XL",familySize:"S",dinnerSeat:"9桌1号",meetingSeat:"9桌1号",type:"normal"},
+{name:"卢东坡",classInfo:"",payInfo:"已赞助",selfSize:"XL",familySize:"M",dinnerSeat:"8桌2号",meetingSeat:"8桌2号",type:"normal"},
+{name:"孙迎宾",classInfo:"",payInfo:"200",selfSize:"2XL",familySize:"M",dinnerSeat:"11桌5号",meetingSeat:"11桌5号",type:"normal"},
+{name:"孟凡新",classInfo:"",payInfo:"200",selfSize:"XL",familySize:"无",dinnerSeat:"12桌1号",meetingSeat:"12桌1号",type:"normal"},
+{name:"申亚楠",classInfo:"",payInfo:"已赞助",selfSize:"M",familySize:"无",dinnerSeat:"10桌5号",meetingSeat:"10桌5号",type:"normal"},
+{name:"杜小龙",classInfo:"",payInfo:"筹备组",selfSize:"3XL",familySize:"无",dinnerSeat:"4桌2号",meetingSeat:"4桌2号",type:"normal"},
+{name:"孙仁远",classInfo:"01材料学博",payInfo:"200",selfSize:"4XL",familySize:"无",dinnerSeat:"9桌7号",meetingSeat:"9桌7号",type:"normal"},
+{name:"杨华",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"11桌8号",meetingSeat:"11桌8号",type:"normal"},
+{name:"黄炳家",classInfo:"",payInfo:"200",selfSize:"3XL",familySize:"无",dinnerSeat:"3桌1号",meetingSeat:"3桌1号",type:"normal"},
+{name:"周杰",classInfo:"03MBA",payInfo:"200",selfSize:"3XL",familySize:"无",dinnerSeat:"10桌2号",meetingSeat:"10桌2号",type:"normal"},
+{name:"刘旭光",classInfo:"04化工硕博_",payInfo:"200",selfSize:"2XL",familySize:"无",dinnerSeat:"9桌4号",meetingSeat:"9桌4号",type:"normal"},
+{name:"原明亭",classInfo:"",payInfo:"200",selfSize:"L",familySize:"无",dinnerSeat:"2桌9号",meetingSeat:"2桌9号",type:"normal"},
+{name:"王骏",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"12桌8号",meetingSeat:"12桌8号",type:"normal"},
+{name:"董锋",classInfo:"94水建",payInfo:"筹备组",selfSize:"无",familySize:"无",dinnerSeat:"4桌1号",meetingSeat:"4桌1号",type:"normal"},
+{name:"陈芳媛",classInfo:"04药学",payInfo:"已赞助",selfSize:"XL",familySize:"6XL",dinnerSeat:"6桌5号",meetingSeat:"6桌5号",type:"normal"},
+{name:"李乾",classInfo:"21工商管理",payInfo:"200",selfSize:"2XL",familySize:"无",dinnerSeat:"12桌9号",meetingSeat:"12桌9号",type:"normal"},
+{name:"高婕",classInfo:"11信管",payInfo:"200",selfSize:"L",familySize:"无",dinnerSeat:"13桌3号",meetingSeat:"13桌3号",type:"normal"},
+{name:"狄国虎",classInfo:"04制药",payInfo:"300",selfSize:"无",familySize:"无",dinnerSeat:"12桌4号",meetingSeat:"12桌4号",type:"normal"},
+{name:"赵凤和",classInfo:"",payInfo:"200",selfSize:"L",familySize:"无",dinnerSeat:"5桌1号",meetingSeat:"5桌1号",type:"normal"},
+{name:"李燕平",classInfo:"",payInfo:"300",selfSize:"5XL",familySize:"2XL",dinnerSeat:"13桌4号",meetingSeat:"13桌4号",type:"normal"},
+{name:"王洁",classInfo:"",payInfo:"筹备组",selfSize:"无",familySize:"无",dinnerSeat:"8桌6号",meetingSeat:"8桌6号",type:"normal"},
+{name:"郭永芳",classInfo:"",payInfo:"已赞助",selfSize:"无",familySize:"无",dinnerSeat:"1桌8号",meetingSeat:"1桌8号",type:"normal"},
+{name:"付文",classInfo:"23届材料",payInfo:"200",selfSize:"6XL",familySize:"无",dinnerSeat:"14桌7号",meetingSeat:"14桌7号",type:"normal"},
+{name:"王广建",classInfo:"",payInfo:"200",selfSize:"XL",familySize:"无",dinnerSeat:"1桌2号",meetingSeat:"1桌2号",type:"normal"},
+{name:"许颖",classInfo:"",payInfo:"已赞助",selfSize:"3XL",familySize:"XL",dinnerSeat:"9桌5号",meetingSeat:"9桌5号",type:"normal"},
+{name:"刘振和",classInfo:"04MBA",payInfo:"200",selfSize:"XL",familySize:"无",dinnerSeat:"10桌1号",meetingSeat:"10桌1号",type:"normal"},
+{name:"赵广俊",classInfo:"",payInfo:"已赞助",selfSize:"无",familySize:"无",dinnerSeat:"2桌1号",meetingSeat:"2桌1号",type:"normal"},
+{name:"周似齐",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"3桌3号",meetingSeat:"3桌3号",type:"normal"},
+{name:"曹洪宝",classInfo:"",payInfo:"已赞助",selfSize:"4XL",familySize:"XL",dinnerSeat:"6桌9号",meetingSeat:"6桌9号",type:"normal"},
+{name:"赵鲁华",classInfo:"02环境",payInfo:"200",selfSize:"4XL",familySize:"无",dinnerSeat:"10桌8号",meetingSeat:"10桌8号",type:"normal"},
+{name:"李斌",classInfo:"",payInfo:"已赞助",selfSize:"无",familySize:"无",dinnerSeat:"未安排",meetingSeat:"未安排",type:"normal"},
+{name:"阎世锋",classInfo:"81技陶",payInfo:"200",selfSize:"XL",familySize:"L",dinnerSeat:"2桌2号",meetingSeat:"2桌2号",type:"normal"},
+{name:"唐佳乐",classInfo:"",payInfo:"筹备组",selfSize:"无",familySize:"无",dinnerSeat:"14桌4号",meetingSeat:"14桌4号",type:"normal"},
+{name:"赵强",classInfo:"",payInfo:"已赞助",selfSize:"L",familySize:"L",dinnerSeat:"6桌1号",meetingSeat:"6桌1号",type:"normal"},
+{name:"王翔",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"8桌7号",meetingSeat:"8桌7号",type:"normal"},
+{name:"赵霞",classInfo:"09材料",payInfo:"筹备组",selfSize:"无",familySize:"无",dinnerSeat:"未安排",meetingSeat:"未安排",type:"normal"},
+{name:"赵欣",classInfo:"",payInfo:"筹备组",selfSize:"M",familySize:"无",dinnerSeat:"14桌3号",meetingSeat:"14桌3号",type:"normal"},
+{name:"刘建斌",classInfo:"",payInfo:"筹备组",selfSize:"XL",familySize:"无",dinnerSeat:"13桌1号",meetingSeat:"13桌1号",type:"normal"},
+{name:"任仙玲",classInfo:"",payInfo:"200",selfSize:"3XL",familySize:"7XL",dinnerSeat:"13桌7号",meetingSeat:"13桌7号",type:"normal"},
+{name:"冯克举",classInfo:"",payInfo:"200",selfSize:"2XL",familySize:"无",dinnerSeat:"8桌9号",meetingSeat:"8桌9号",type:"normal"},
+{name:"于超",classInfo:"13建筑硕",payInfo:"筹备组",selfSize:"2XL",familySize:"无",dinnerSeat:"12桌2号",meetingSeat:"12桌2号",type:"normal"},
+{name:"李文清",classInfo:"18教育学院",payInfo:"筹备组",selfSize:"无",familySize:"无",dinnerSeat:"11桌7号",meetingSeat:"11桌7号",type:"normal"},
+{name:"张世磊",classInfo:"06双控硕",payInfo:"200",selfSize:"XL",familySize:"无",dinnerSeat:"8桌8号",meetingSeat:"8桌8号",type:"normal"},
+{name:"孙晓倩",classInfo:"13软件",payInfo:"200",selfSize:"M",familySize:"无",dinnerSeat:"12桌10号",meetingSeat:"12桌10号",type:"normal"},
+{name:"黄文明",classInfo:"84船舶",payInfo:"筹备组",selfSize:"无",familySize:"无",dinnerSeat:"14桌1号",meetingSeat:"14桌1号",type:"normal"},
+{name:"刘晓杰",classInfo:"25软件",payInfo:"筹备组",selfSize:"XL",familySize:"无",dinnerSeat:"14桌5号",meetingSeat:"14桌5号",type:"normal"},
+{name:"冯海暴",classInfo:"17水利",payInfo:"接龙未缴费",selfSize:"4XL",familySize:"S",dinnerSeat:"14桌2号",meetingSeat:"14桌2号",type:"normal"},
+{name:"周志伟",classInfo:"",payInfo:"300",selfSize:"无",familySize:"无",dinnerSeat:"11桌1号",meetingSeat:"11桌1号",type:"normal"},
+{name:"李鸿瑞",classInfo:"14能动",payInfo:"200",selfSize:"3XL",familySize:"无",dinnerSeat:"5桌9号",meetingSeat:"5桌9号",type:"normal"},
+{name:"李永明",classInfo:"82机械",payInfo:"300",selfSize:"4XL",familySize:"XL",dinnerSeat:"2桌10号",meetingSeat:"2桌10号",type:"normal"},
+{name:"孙小军",classInfo:"17材料",payInfo:"200",selfSize:"2XL",familySize:"无",dinnerSeat:"10桌9号",meetingSeat:"10桌9号",type:"normal"},
+{name:"夏世群",classInfo:"",payInfo:"已赞助",selfSize:"无",familySize:"无",dinnerSeat:"未安排",meetingSeat:"未安排",type:"normal"},
+{name:"刘继宪",classInfo:"84高分子",payInfo:"200",selfSize:"XL",familySize:"无",dinnerSeat:"9桌8号",meetingSeat:"9桌8号",type:"normal"},
+{name:"潘家敬",classInfo:"11材料加工",payInfo:"300",selfSize:"4XL",familySize:"S",dinnerSeat:"13桌8号",meetingSeat:"13桌8号",type:"normal"},
+{name:"张新齐",classInfo:"06机械",payInfo:"200",selfSize:"3XL",familySize:"无",dinnerSeat:"7桌9号",meetingSeat:"7桌9号",type:"normal"},
+{name:"王聪",classInfo:"材料",payInfo:"200",selfSize:"6XL",familySize:"无",dinnerSeat:"9桌10号",meetingSeat:"9桌10号",type:"normal"},
+{name:"李中华",classInfo:"00MBA",payInfo:"200",selfSize:"2XL",familySize:"无",dinnerSeat:"10桌6号",meetingSeat:"10桌6号",type:"normal"},
+{name:"徐伟",classInfo:"化工",payInfo:"200",selfSize:"2XL",familySize:"无",dinnerSeat:"1桌11号",meetingSeat:"1桌11号",type:"normal"},
+{name:"杨海军",classInfo:"2006化工硕",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"7桌6号",meetingSeat:"7桌6号",type:"normal"},
+{name:"赵青山",classInfo:"06化工",payInfo:"200",selfSize:"L",familySize:"无",dinnerSeat:"13桌2号",meetingSeat:"13桌2号",type:"normal"},
+{name:"滕厚斌",classInfo:"05MBA",payInfo:"200",selfSize:"XL",familySize:"无",dinnerSeat:"10桌7号",meetingSeat:"10桌7号",type:"normal"},
+{name:"林永健",classInfo:"05MBA",payInfo:"200",selfSize:"4XL",familySize:"L",dinnerSeat:"2桌8号",meetingSeat:"2桌8号",type:"normal"},
+{name:"李娜",classInfo:"",payInfo:"筹备组",selfSize:"M",familySize:"无",dinnerSeat:"7桌4号",meetingSeat:"7桌4号",type:"normal"},
+{name:"安琦",classInfo:"10结构",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"7桌8号",meetingSeat:"7桌8号",type:"normal"},
+{name:"刘岩博",classInfo:"25届博 化工",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"14桌8号",meetingSeat:"14桌8号",type:"normal"},
+{name:"李昌良",classInfo:"00港航",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"6桌2号",meetingSeat:"6桌2号",type:"normal"},
+{name:"郇筱林",classInfo:"01结构",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"6桌4号",meetingSeat:"6桌4号",type:"normal"},
+{name:"邴连成",classInfo:"",payInfo:"100",selfSize:"无",familySize:"无",dinnerSeat:"6桌7号",meetingSeat:"6桌7号",type:"normal"},
+{name:"李常强",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"8桌1号",meetingSeat:"8桌1号",type:"normal"},
+{name:"邓庆尧",classInfo:"96博",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"2桌6号",meetingSeat:"2桌6号",type:"normal"},
+{name:"郭大勇",classInfo:"83级化工机械",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"3桌7号",meetingSeat:"3桌7号",type:"normal"},
+{name:"刘静如",classInfo:"",payInfo:"筹备组",selfSize:"无",familySize:"无",dinnerSeat:"8桌3号",meetingSeat:"8桌3号",type:"normal"},
+{name:"杨爱民",classInfo:"",payInfo:"未接龙未缴费",selfSize:"无",familySize:"无",dinnerSeat:"1桌10号",meetingSeat:"3桌11号",type:"normal"},
+{name:"王姗",classInfo:"20经管",payInfo:"表演嘉宾",selfSize:"无",familySize:"无",dinnerSeat:"8桌10号",meetingSeat:"8桌10号",type:"normal"},
+{name:"尹健",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"1桌9号",meetingSeat:"4桌11号",type:"normal"},
+{name:"苗培基",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"8桌4号",meetingSeat:"8桌4号",type:"normal"},
+{name:"王晓龙",classInfo:"青岛院",payInfo:"接龙未缴费",selfSize:"无",familySize:"无",dinnerSeat:"2桌7号",meetingSeat:"2桌7号",type:"normal"},
+{name:"李劲松",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"3桌2号",meetingSeat:"3桌2号",type:"normal"},
+{name:"张旭东",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"1桌5号",meetingSeat:"1桌9号",type:"normal"},
+{name:"阎宝珠",classInfo:"",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"1桌7号",meetingSeat:"1桌7号",type:"normal"},
+{name:"李乃胜",classInfo:"",payInfo:"",selfSize:"无",familySize:"无",dinnerSeat:"1桌1号",meetingSeat:"1桌1号",type:"normal"},
+{name:"周大林",classInfo:"",payInfo:"筹备组",selfSize:"无",familySize:"无",dinnerSeat:"未安排",meetingSeat:"未安排",type:"normal"},
+{name:"李春京",classInfo:"98级",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"9桌9号",meetingSeat:"9桌9号",type:"normal"},
+{name:"刘泉",classInfo:"",payInfo:"已赞助",selfSize:"L",familySize:"无",dinnerSeat:"7桌1号",meetingSeat:"7桌1号",type:"normal"},
+{name:"时泽坤",classInfo:"24水利",payInfo:"200",selfSize:"无",familySize:"无",dinnerSeat:"未安排",meetingSeat:"未安排",type:"normal"},
+
+// ============== 新增：家属/司机/陪同（只显示座次） ==============
+{name:"杨贤金",dinnerSeat:"1桌3号",meetingSeat:"1桌3号",type:"guest"},
+{name:"刘毅",dinnerSeat:"1桌4号",meetingSeat:"1桌4号",type:"guest"},
+{name:"毛照昉",dinnerSeat:"1桌6号",meetingSeat:"1桌5号",type:"guest"},
+{name:"张云峰",dinnerSeat:"1桌6号",meetingSeat:"1桌6号",type:"guest"},
+{name:"申兆伟",dinnerSeat:"1桌3号",meetingSeat:"1桌10号",type:"guest"},
+{name:"王永祥",dinnerSeat:"2桌11号",meetingSeat:"1桌11号",type:"guest"},
+{name:"石宁",dinnerSeat:"2桌3号",meetingSeat:"2桌3号",type:"guest"},
+{name:"徐磊",dinnerSeat:"2桌4号",meetingSeat:"2桌4号",type:"guest"},
+{name:"马广旭",dinnerSeat:"2桌4号",meetingSeat:"2桌4号",type:"guest"},
+{name:"王骁",dinnerSeat:"2桌5号",meetingSeat:"2桌5号",type:"guest"},
+{name:"李永明家属",dinnerSeat:"3桌4号",meetingSeat:"3桌4号",type:"guest"},
+{name:"何宗斌",dinnerSeat:"3桌5号",meetingSeat:"3桌5号",type:"guest"},
+{name:"郝彤",dinnerSeat:"3桌6号",meetingSeat:"3桌6号",type:"guest"},
+{name:"安柏松",dinnerSeat:"3桌8号",meetingSeat:"3桌8号",type:"guest"},
+{name:"逄宗玉",dinnerSeat:"3桌9号",meetingSeat:"3桌9号",type:"guest"},
+{name:"王学贵",dinnerSeat:"3桌10号",meetingSeat:"3桌10号",type:"guest"},
+{name:"姜立安",dinnerSeat:"4桌3号",meetingSeat:"4桌3号",type:"guest"},
+{name:"吕飏",dinnerSeat:"4桌4号",meetingSeat:"4桌4号",type:"guest"},
+{name:"孟令松",dinnerSeat:"4桌5号",meetingSeat:"4桌5号",type:"guest"},
+{name:"侯新军",dinnerSeat:"4桌6号",meetingSeat:"4桌6号",type:"guest"},
+{name:"国伟",dinnerSeat:"4桌7号",meetingSeat:"4桌7号",type:"guest"},
+{name:"李尊强",dinnerSeat:"4桌8号",meetingSeat:"4桌8号",type:"guest"},
+{name:"高德纯",dinnerSeat:"4桌9号",meetingSeat:"4桌9号",type:"guest"},
+{name:"黄津辉",dinnerSeat:"4桌10号",meetingSeat:"4桌10号",type:"guest"},
+{name:"郭俊英",dinnerSeat:"5桌3号",meetingSeat:"5桌3号",type:"guest"},
+{name:"张福波",dinnerSeat:"5桌4号",meetingSeat:"5桌4号",type:"guest"},
+{name:"蔡汉明",dinnerSeat:"5桌5号",meetingSeat:"5桌5号",type:"guest"},
+{name:"武燕平",dinnerSeat:"5桌6号",meetingSeat:"5桌6号",type:"guest"},
+{name:"王登玲",dinnerSeat:"5桌7号",meetingSeat:"5桌7号",type:"guest"},
+{name:"李劲芬",dinnerSeat:"5桌8号",meetingSeat:"5桌8号",type:"guest"},
+{name:"王家林",dinnerSeat:"5桌10号",meetingSeat:"5桌10号",type:"guest"},
+{name:"高毅",dinnerSeat:"5桌11号",meetingSeat:"5桌11号",type:"guest"},
+{name:"赵强夫人",dinnerSeat:"6桌3号",meetingSeat:"6桌3号",type:"guest"},
+{name:"陈芳媛家属",dinnerSeat:"6桌6号",meetingSeat:"6桌6号",type:"guest"},
+{name:"邴连成家属",dinnerSeat:"6桌8号",meetingSeat:"6桌8号",type:"guest"},
+{name:"曹洪宝家属",dinnerSeat:"6桌10号",meetingSeat:"6桌10号",type:"guest"},
+{name:"曹洪宝子女",dinnerSeat:"6桌11号",meetingSeat:"6桌11号",type:"guest"},
+{name:"高峰",dinnerSeat:"7桌7号",meetingSeat:"7桌7号",type:"guest"},
+{name:"张新齐子女",dinnerSeat:"7桌10号",meetingSeat:"7桌10号",type:"guest"},
+{name:"张婷婷",dinnerSeat:"8桌11号",meetingSeat:"8桌11号",type:"guest"},
+{name:"赵忠德夫人",dinnerSeat:"9桌3号",meetingSeat:"9桌3号",type:"guest"},
+{name:"许颖子女",dinnerSeat:"9桌6号",meetingSeat:"9桌6号",type:"guest"},
+{name:"赵鲁华子女",dinnerSeat:"10桌10号",meetingSeat:"10桌10号",type:"guest"},
+{name:"刘振和子女",dinnerSeat:"10桌11号",meetingSeat:"10桌11号",type:"guest"},
+{name:"魏兆成",dinnerSeat:"11桌2号",meetingSeat:"11桌2号",type:"guest"},
+{name:"卢东坡夫人",dinnerSeat:"11桌3号",meetingSeat:"11桌3号",type:"guest"},
+{name:"周志伟子女",dinnerSeat:"11桌4号",meetingSeat:"11桌4号",type:"guest"},
+{name:"孙迎宾子女",dinnerSeat:"11桌6号",meetingSeat:"11桌6号",type:"guest"},
+{name:"杨华子女1",dinnerSeat:"11桌9号",meetingSeat:"11桌9号",type:"guest"},
+{name:"杨华子女2",dinnerSeat:"11桌10号",meetingSeat:"11桌10号",type:"guest"},
+{name:"狄国虎家属",dinnerSeat:"12桌5号",meetingSeat:"12桌5号",type:"guest"},
+{name:"狄国虎子女1",dinnerSeat:"12桌6号",meetingSeat:"12桌6号",type:"guest"},
+{name:"狄国虎子女2",dinnerSeat:"12桌7号",meetingSeat:"12桌7号",type:"guest"},
+{name:"李燕平家属",dinnerSeat:"13桌5号",meetingSeat:"13桌5号",type:"guest"},
+{name:"李燕平子女",dinnerSeat:"13桌6号",meetingSeat:"13桌6号",type:"guest"},
+{name:"潘家敬家属",dinnerSeat:"13桌9号",meetingSeat:"13桌9号",type:"guest"},
+{name:"潘家敬子女",dinnerSeat:"13桌10号",meetingSeat:"13桌10号",type:"guest"},
+{name:"郭永芳助理",dinnerSeat:"14桌6号",meetingSeat:"14桌6号",type:"guest"},
+{name:"驾驶员1",dinnerSeat:"14桌9号",meetingSeat:"14桌9号",type:"guest"},
+{name:"驾驶员2",dinnerSeat:"14桌10号",meetingSeat:"14桌10号",type:"guest"},
+{name:"驾驶员3",dinnerSeat:"14桌11号",meetingSeat:"14桌11号",type:"guest"},
 ];
 
-// ============== 新增：每日自动清空签到记录 ==============
+// ============== 每日自动清空 ==============
 function checkNewDay() {
-    let today = new Date().toLocaleDateString(); // 获取今天日期 如 2025/5/20
+    let today = new Date().toLocaleDateString();
     let lastDate = localStorage.getItem("lastSignDate");
-
-    // 如果是新的一天 → 清空签到数据
     if (lastDate !== today) {
         localStorage.setItem("signData", JSON.stringify([]));
         localStorage.setItem("lastSignDate", today);
     }
 }
-
-// 页面加载时自动检查
 checkNewDay();
 
-// 签到记录本地存储
-let signList = JSON.parse(localStorage.getItem("signData"))||[];
+let signList = JSON.parse(localStorage.getItem("signData")) || [];
 
-// 统一更新签到记录显示
 function refreshRecord() {
     let r = JSON.parse(localStorage.getItem("signData")) || [];
     let recordDom = document.getElementById("record");
@@ -87,57 +244,98 @@ function refreshRecord() {
     recordDom.style.display = "block";
 }
 
-function checkSign(){
-    let n = document.getElementById("name").value.trim();
-    document.getElementById("err").style.display="none";
+// 根据户主姓名，查询所有家属/子女
+function getFamilyMembers(masterName) {
+    return userList.filter(item => 
+        item.type === "guest" && 
+        item.name.includes(masterName)
+    );
+}
 
-    // 空姓名 → 隐藏信息
-    if(!n){
-        document.getElementById("info").style.display = "none";
+function checkSign() {
+    let n = document.getElementById("name").value.trim();
+    document.getElementById("err").style.display = "none";
+    document.getElementById("info").style.display = "none";
+
+    if (!n) {
         err("请输入姓名");
         return;
     }
 
-    let user = userList.find(item=>item.name===n);
-
-    // 姓名不存在 → 隐藏信息
-    if(!user){
-        document.getElementById("info").style.display = "none";
+    // 查找匹配的人员
+    let foundUser = userList.find(item => item.name === n);
+    
+    if (!foundUser) {
         err("姓名不存在，无法签到");
         return;
     }
 
-    // 已签到 → 显示信息 + 提示错误
-    if(signList.includes(n)){
-        document.getElementById("u_name").innerText = user.name;
-        document.getElementById("u_pay").innerText = user.pay;
-        document.getElementById("u_size").innerText = user.size;
-        document.getElementById("u_seat").innerText = user.seat;
-        document.getElementById("info").style.display = "block";
-        err("该人员已签到");
-        return;
+    // 确定户主（用于签到记录）
+    let masterUser;
+    if (foundUser.type === "normal") {
+        masterUser = foundUser;
+    } else {
+        // 家属/嘉宾，提取户主
+        let masterName = foundUser.name.replace(/家属|子女|夫人|助理|驾驶员\d*/g, "").trim();
+        masterUser = userList.find(item => item.name === masterName && item.type === "normal");
+        if (!masterUser) {
+            masterUser = foundUser;
+        }
     }
 
-    // 签到成功 → 显示信息 + 自动刷新并显示签到名单
-    signList.push(n);
-    localStorage.setItem("signData",JSON.stringify(signList));
-    document.getElementById("u_name").innerText = user.name;
-    document.getElementById("u_pay").innerText = user.pay;
-    document.getElementById("u_size").innerText = user.size;
-    document.getElementById("u_seat").innerText = user.seat;
-    document.getElementById("info").style.display="block";
-    
-    // 自动刷新签到记录并显示
+    // 添加签到记录
+    if (!signList.includes(masterUser.name)) {
+        signList.push(masterUser.name);
+        localStorage.setItem("signData", JSON.stringify(signList));
+    }
+
+    // 显示信息
+    showUserInfo(foundUser);
     refreshRecord();
 }
 
-function err(t){
-    let e = document.getElementById("err");
-    e.innerText = t;
-    e.style.display="block";
+function showUserInfo(user) {
+    document.getElementById("u_name").innerText = user.name;
+    document.getElementById("u_meetingSeat").innerText = user.meetingSeat || "未安排";
+    document.getElementById("u_dinnerSeat").innerText = user.dinnerSeat || "未安排";
+
+    let normalNodes = document.querySelectorAll(".show-normal");
+    if (user.type === "guest") {
+        normalNodes.forEach(el => el.style.display = "none");
+    } else {
+        normalNodes.forEach(el => el.style.display = "block");
+        document.getElementById("u_class").innerText = user.classInfo || "无";
+        document.getElementById("u_pay").innerText = user.payInfo || "无";
+        document.getElementById("u_size").innerText = user.selfSize || "无"; // 修复这里
+        document.getElementById("u_familySize").innerText = user.familySize || "无";
+    }
+
+    // 加载家属/子女信息
+    let familyList = getFamilyMembers(user.name);
+    let familyDom = document.getElementById("familyList");
+    familyDom.innerHTML = "";
+
+    if(familyList.length > 0){
+        familyDom.innerHTML = `<p style="margin:10px 0;font-weight:bold;">👨‍👩‍👧‍👦 家属/子女信息：</p>`;
+        familyList.forEach(f => {
+            familyDom.innerHTML += `
+                <div class="family-item">
+                    ${f.name}｜会议：${f.meetingSeat}｜晚宴：${f.dinnerSeat}
+                </div>
+            `;
+        });
+    }
+
+    document.getElementById("info").style.display = "block";
 }
 
-function showRecord(){
+function err(t) {
+    let e = document.getElementById("err");
+    e.innerText = t;
+    e.style.display = "block";
+}
+
+function showRecord() {
     refreshRecord();
 }
 </script>
